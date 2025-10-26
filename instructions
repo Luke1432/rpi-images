@@ -1,11 +1,77 @@
-1. Connect to Server
-2. smb://192.168.50.143
-3. Registered User
-	Name: lukasfenkam
-	Password: Monkey247/.
-4. Go to photos
-	a. Share
-	b. Save to files
-	c. Select ip address
-	d. Select images folder
-	e. Save
+==================================================
+ HOW TO TRANSFER IMAGES FROM IPHONE TO RASPBERRY PI
+==================================================
+
+🔹 BEFORE YOU START (only do this once)
+---------------------------------------
+1. Make sure your Pi is turned on and connected to the same Wi-Fi as your iPhone.
+2. Verify the Samba server is running:
+      sudo systemctl status smbd
+   If it’s not active, start it:
+      sudo systemctl start smbd
+3. Check your Pi’s IP address:
+      hostname -I
+   Example result: 192.168.50.123
+4. Confirm your Samba user exists and is enabled:
+      sudo smbpasswd -a lukasfenkam
+      sudo smbpasswd -e lukasfenkam
+5. Confirm that the images folder exists:
+      ls /srv/images
+   (If missing, create it with:
+      sudo mkdir -p /srv/images
+      sudo chown -R lukasfenkam:lukasfenkam /srv/images
+      sudo chmod -R 2775 /srv/images )
+
+----------------------------------------------------
+🔹 EVERY TIME YOU WANT TO TRANSFER IMAGES (iPhone)
+----------------------------------------------------
+1. On iPhone → open the **Files** app.
+2. Tap **Browse** → “…” (top right) → **Connect to Server**.
+3. Enter your Pi’s address:
+      smb://<your-pi-ip>/images
+   Example:
+      smb://192.168.50.123/images
+4. Tap **Connect**.
+5. Choose **Registered User** (not Guest).
+6. Username:  lukasfenkam
+   Password:  (your Samba password)
+7. After it connects, you’ll see the “images” folder.
+8. To upload photos:
+      - Open **Photos** app.
+      - Select pictures → tap **Share** → **Save to Files**.
+      - Choose your Pi server → `images` → **Save**.
+9. Wait until the upload finishes.
+10. You can now open **Files → RaspberryPi → images**
+    to view or delete the uploaded photos.
+
+----------------------------------------------------
+🔹 TO VERIFY UPLOADS ON THE PI
+----------------------------------------------------
+1. On the Pi terminal:
+      ls -lh /srv/images
+2. You should see the new files.
+3. Optional: open them (desktop mode):
+      xdg-open /srv/images
+   or list them in a web browser:
+      cd /srv/images
+      python3 -m http.server 8080
+   Then on your phone → open
+      http://<your-pi-ip>:8080
+
+----------------------------------------------------
+🔹 TROUBLESHOOTING
+----------------------------------------------------
+❌ Can't upload / read-only:
+   → Edit /etc/samba/smb.conf and make sure:
+        guest ok = no
+        read only = no
+   → Restart Samba:
+        sudo systemctl restart smbd
+
+❌ iPhone asks for password every time:
+   → In Files app, tap "…" → Edit → enable "Connect Automatically".
+
+❌ Wrong IP or can’t find server:
+   → Run hostname -I again and reconnect using the new IP.
+
+==================================================
