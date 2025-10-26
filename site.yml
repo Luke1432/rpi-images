@@ -1,13 +1,9 @@
-- name: Configure Raspberry Pi image server
-  hosts: rpi
+---
+- hosts: pis
   become: true
-
-  pre_tasks: 
-    - name: Set hostname
-      ansible.builtin.hostname:
-        name: "{{ hostname }}"
-
+  gather_facts: yes
   roles:
-    - role: common
-    - role: "{{ 'nfs_client' if storage_mode == 'remote_nfs' else 'nfs_server' }}"
-    - role: samba
+    - common
+    - samba        # your existing Samba role (writeable share on all Pis)
+    - nfs_server   # your existing NFS export role (optional but fine)
+    - replication  # NEW: sets up keyless SSH + lsyncd one-to-many

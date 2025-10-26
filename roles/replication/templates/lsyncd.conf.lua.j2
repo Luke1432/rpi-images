@@ -1,0 +1,19 @@
+settings {
+  logfile = "/var/log/lsyncd.log",
+  statusFile = "/var/log/lsyncd.status",
+}
+
+-- Replicate from PRIMARY to each replica
+{% for host in replica_hosts %}
+sync {
+  default.rsync,
+  source = "{{ share_path }}/",
+  target = "{{ ansible_user_id }}@{{ hostvars[host].ansible_host | default(host) }}:{{ share_path }}/",
+  rsync = {
+    archive = true,
+    compress = false,
+    verbose = {{ 'true' if lsyncd_verbose else 'false' }},
+    _extra = { {% if lsyncd_delete %}"--delete"{% endif %} }
+  }
+}
+{% endfor %}

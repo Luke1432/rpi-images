@@ -1,0 +1,59 @@
+---
+# Create .ssh on ALL hosts (needed for authorized_keys on replicas)
+- name: Ensure .ssh exists for {{ samba_user }}
+  file:
+    path: "/home/{{ samba_user }}/.ssh"
+    state: directory
+    owner: "{{ samba_user }}"
+    group: "{{ samba_group }}"
+    mode: "0700"
+
+# Generate SSH key on primary only
+- name: Generate SSH key on primary (ed25519) if missing
+  when: inventory_hostname == primary_host
+  community.crypto.openssh_keypair:
+    path: "/home/{{ samba_user }}/.ssh/id_ed25519"
+    type: ed25519
+    owner: "{{ samba_user }}"
+    group: "{{ samba_group }}"
+    mode: "0600"
+  register: sshkey_result
+
+# Read the public key from primary
+- name: Read public key from primary
+  when: inventory_hostname == primary_host
+  slurp:
+    src: "/home/{{ samba_user }}/.ssh/id_ed25519.pub"
+  register: primary_pubkey
+
+# Share the pubkey value with other hosts
+- name: Set fact with primary_public_key
+  when: inventory_hostname == primary_host
+  set_fact:
+    primary_public_key_str: "{{ primary_pubkey.content | b64decode }}"
+
+# Install the primary's pubkey to ALL replicas
+- name: Authorize primary key on replicas
+  authorized_key:
+    user: "{{ samba_user }}"
+    key: "{{ hostvars[primary_host].primary_public_key_str | default(primary_public_key_str | default('')) }}"
+    state: present
+  when: inventory_hostname != primary_host
+
+# Render lsyncd config on primary only
+- name: Build lsyncd.conf on primary
+  when: inventory_hostname == primary_host
+  template:
+    src: lsyncd.conf.lua.j2
+    dest: /etc/lsyncd.conf.lua
+    owner: root
+    group: root
+    mode: "0644"
+
+# Start/enable lsyncd on the primary
+- name: Enable and start lsyncd on primary
+  when: inventory_hostname == primary_host
+  service:
+    name: lsyncd
+    state: started
+    enabled: yes

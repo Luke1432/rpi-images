@@ -1,0 +1,18 @@
+---
+# main shared folder
+share_path: /srv/images
+share_name: images
+
+# samba user and group (default Raspberry Pi user)
+samba_user: pi
+samba_group: pi
+
+# your LAN for NFS
+lan_cidr: 192.168.1.0/24
+
+# choose your primary host (must match hosts.ini)
+primary_host: rpi-main
+
+# replication tuning
+lsyncd_delete: true
+lsyncd_verbose: true
