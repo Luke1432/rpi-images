@@ -1,0 +1,54 @@
+- name: Install Samba
+  ansible.builtin.apt:
+    name: samba
+    state: present
+
+# If you want a dedicated group for shared files, create it here:
+- name: Ensure UNIX user exists for SMB
+  ansible.builtin.user:
+    name: "{{ smb_user }}"
+    shell: /bin/bash
+    create_home: yes
+  when: smb_user != "root"
+
+# Path to share depends on mode
+- name: Determine SMB path
+  ansible.builtin.set_fact:
+    smb_path: "{{ share_path if storage_mode == 'local' else nfs_mount_point }}"
+
+- name: Ensure share path ownership
+  ansible.builtin.file:
+    path: "{{ smb_path }}"
+    state: directory
+    owner: "{{ share_owner }}"
+    group: "{{ share_group }}"
+    mode: "{{ share_mode }}"
+
+- name: Create/Update Samba password for user
+  ansible.builtin.shell: |
+    (pdbedit -L | grep -q '^{{ smb_user }}:' ) || (echo -e "{{ smb_password }}\n{{ smb_password }}" | smbpasswd -a -s {{ smb_user }})
+  args:
+    executable: /bin/bash
+  changed_when: false
+
+- name: Render smb.conf
+  ansible.builtin.template:
+    src: smb.conf.j2
+    dest: /etc/samba/smb.conf
+    owner: root
+    group: root
+    mode: "0644"
+  notify: Restart Samba
+
+- name: Enable and start Samba
+  ansible.builtin.service:
+    name: smbd
+    state: started
+    enabled: true
+
+# Optional firewall for SMB
+- name: Allow SMB in UFW
+  ansible.builtin.ufw:
+    rule: allow
+    port: "445"
+    proto: tcp

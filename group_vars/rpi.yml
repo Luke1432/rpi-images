@@ -1,0 +1,26 @@
+# === Core settings ===
+hostname: rpi-images
+share_name: images
+share_path: /srv/images
+smb_user: lukasfenkam
+smb_password: "Monkey247/."
+
+# === Storage mode ===
+storage_mode: "local"
+
+# === NFS server options ===
+nfs_allowed_clients: "127.0.0.1/8"
+nfs_export_path: "{{ share_path }}"
+nfs_export_options: "rw,sync,no_subtree_check,sec=sys,fsid=0"
+
+# === SMB share behaviour ===
+smb_guest_ok: "no"
+smb_browseable: "yes"
+smb_create_mask: "0664"
+smb_directory_mask: "0775"
+
+# === File ownership and perms on the share root ===
+share_owner: "{{ smb_user }}"
+share_group: "{{ smb_user }}"
+share_mode: "0775"
+

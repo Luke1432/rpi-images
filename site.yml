@@ -1,0 +1,13 @@
+- name: Configure Raspberry Pi image server
+  hosts: rpi
+  become: true
+
+  pre_tasks: 
+    - name: Set hostname
+      ansible.builtin.hostname:
+        name: "{{ hostname }}"
+
+  roles:
+    - role: common
+    - role: "{{ 'nfs_client' if storage_mode == 'remote_nfs' else 'nfs_server' }}"
+    - role: samba

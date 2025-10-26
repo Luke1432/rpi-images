@@ -1,0 +1,38 @@
+- name: Install NFS server
+  ansible.builtin.apt:
+    name: nfs-kernel-server
+    state: present
+
+- name: Ensure export path exists
+  ansible.builtin.file:
+    path: "{{ nfs_export_path }}"
+    state: directory
+    owner: "{{ share_owner }}"
+    group: "{{ share_group }}"
+    mode: "{{ share_mode }}"
+
+- name: Render /etc/exports
+  ansible.builtin.template:
+    src: exports.j2
+    dest: /etc/exports
+    owner: root
+    group: root
+    mode: "0644"
+  notify: Restart NFS
+
+- name: Enable and start NFS
+  ansible.builtin.service:
+    name: nfs-kernel-server
+    state: started
+    enabled: true
+
+- name: Export NFS shares
+  ansible.builtin.command: exportfs -ra
+  changed_when: false
+
+# Optional firewall for NFS
+- name: Allow NFS in UFW
+  ansible.builtin.ufw:
+    rule: allow
+    port: "2049"
+    proto: tcp

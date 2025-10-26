@@ -1,0 +1,34 @@
+- name: Update apt cache
+  ansible.builtin.apt:
+    update_cache: yes
+    cache_valid_time: 3600
+
+- name: Upgrade packages (safe)
+  ansible.builtin.apt:
+    upgrade: safe
+    autoremove: yes
+
+- name: Ensure base packages present
+  ansible.builtin.apt:
+    name:
+      - vim
+      - curl
+      - git
+      - ca-certificates
+      - ufw
+    state: present
+
+- name: Create share directory (local mode)
+  ansible.builtin.file:
+    path: "{{ share_path }}"
+    state: directory
+    owner: "{{ share_owner }}"
+    group: "{{ share_group }}"
+    mode: "{{ share_mode }}"
+  when: storage_mode == "local"
+
+- name: Ensure time is correct (optional but helpful)
+  ansible.builtin.service:
+    name: systemd-timesyncd
+    state: started
+    enabled: true

@@ -1,0 +1,20 @@
+- name: Install NFS client
+  ansible.builtin.apt:
+    name: nfs-common
+    state: present
+
+- name: Create mount point
+  ansible.builtin.file:
+    path: "{{ nfs_mount_point }}"
+    state: directory
+    owner: "{{ share_owner }}"
+    group: "{{ share_group }}"
+    mode: "{{ share_mode }}"
+
+- name: Ensure fstab entry for remote NFS
+  ansible.builtin.mount:
+    path: "{{ nfs_mount_point }}"
+    src: "{{ nfs_remote_server }}:{{ nfs_remote_export }}"
+    fstype: nfs
+    opts: "defaults,_netdev"
+    state: mounted
